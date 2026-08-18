@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriately as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="SPVC supplementary material for structured and panoptic video fixing in cross-dataset driving scene rendering.">
+  <meta property="og:title" content="SPVC: Structured and Panoptic Video Fixing" />
+  <meta property="og:description" content="Structured, panoptic, video-consistent artifact fixing across driving datasets." />
+  <!-- Path to banner image, should be in the path listed below. Optimal dimensions are 1200X630-->
+  <meta property="og:image" content="static/images/spvc-teaser-poster.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+
+  <meta name="twitter:title" content="SPVC: Structured and Panoptic Video Fixing">
+  <meta name="twitter:description" content="Structured, panoptic, video-consistent artifact fixing across driving datasets.">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimensions are 1200X600-->
+  <meta name="twitter:image" content="static/images/spvc-teaser-poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="SPVC, 3D Gaussian Splatting, autonomous driving, video diffusion, novel view synthesis, panoptic fixing">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05070d">
+
+
+  <title>SPVC</title>
+  <link rel="icon" type="image/svg+xml" href="static/images/spvc-mark.svg">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Roboto+Mono|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+  <script src="static/js/event_handler.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize all comparison sliders
+      document.querySelectorAll('.comparison-wrapper-small').forEach(function(wrapper) {
+        const video1 = wrapper.querySelector('.comparison-video.video1');
+        const video2 = wrapper.querySelector('.comparison-video.video2');
+        const handle = wrapper.querySelector('.slider-handle');
+        
+        if (!video1 || !video2 || !handle) return;
+        
+        let isDragging = false;
+        
+        function updateSlider(e) {
+          const rect = wrapper.getBoundingClientRect();
+          let x;
+          if (e.touches) {
+            x = e.touches[0].clientX - rect.left;
+          } else {
+            x = e.clientX - rect.left;
+          }
+          
+          const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+          video2.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+          handle.style.left = percentage + '%';
+        }
+        
+        handle.addEventListener('mousedown', function(e) {
+          isDragging = true;
+          e.preventDefault();
+        });
+        
+        handle.addEventListener('touchstart', function(e) {
+          isDragging = true;
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+          if (isDragging) updateSlider(e);
+        });
+        
+        document.addEventListener('touchmove', function(e) {
+          if (isDragging) updateSlider(e);
+        });
+        
+        document.addEventListener('mouseup', function() {
+          isDragging = false;
+        });
+        
+        document.addEventListener('touchend', function() {
+          isDragging = false;
+        });
+        
+        wrapper.addEventListener('click', updateSlider);
+        
+        // Sync video playback
+        video1.addEventListener('play', function() {
+          video2.currentTime = video1.currentTime;
+          video2.play();
+        });
+        video1.addEventListener('seeked', function() {
+          video2.currentTime = video1.currentTime;
+        });
+      });
+    });
+  </script>
+  <style>
+    /* Teaser replaces the original two-video comparison block. */
+    .teaser-video-wrap {
+      width: min(100%, 1100px);
+      aspect-ratio: 16 / 9;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(10, 18, 30, 0.12);
+      border-radius: 6px;
+      background: #000;
+      box-shadow: 0 12px 32px rgba(10, 18, 30, 0.16);
+    }
+    .teaser-video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* Hero Two Columns Layout */
+    .hero-two-columns {
+      display: flex;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+    .hero-column {
+      flex: 1;
+      min-width: 0;
+    }
+    .hero-column-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #363636;
+      text-align: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #3273dc;
+    }
+    
+    /* Small Comparison Container for Two Columns */
+    .comparison-container-small {
+      position: relative;
+      width: 100%;
+    }
+    .comparison-wrapper-small {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    }
+    .comparison-wrapper-small .comparison-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .comparison-wrapper-small .comparison-video.video2 {
+      clip-path: inset(0 50% 0 0);
+    }
+    .comparison-wrapper-small .slider-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: white;
+      cursor: ew-resize;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .comparison-wrapper-small .slider-handle::before,
+    .comparison-wrapper-small .slider-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 0;
+      height: 0;
+      border: 6px solid transparent;
+    }
+    .comparison-wrapper-small .slider-handle::before {
+      left: -14px;
+      border-right-color: white;
+      transform: translateY(-50%);
+    }
+    .comparison-wrapper-small .slider-handle::after {
+      right: -14px;
+      border-left-color: white;
+      transform: translateY(-50%);
+    }
+    .comparison-wrapper-small .comparison-label {
+      position: absolute;
+      bottom: 8px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      border-radius: 4px;
+      z-index: 5;
+    }
+    .comparison-wrapper-small .comparison-label.left {
+      left: 8px;
+    }
+    .comparison-wrapper-small .comparison-label.right {
+      right: 8px;
+    }
+    
+    /* Make hero columns equal height */
+    .hero-two-columns {
+      align-items: stretch;
+    }
+    .hero-column {
+      display: flex;
+      flex-direction: column;
+    }
+    .hero-column .comparison-container-small {
+      flex: 1;
+    }
+    
+    @media screen and (max-width: 1024px) {
+      .hero-two-columns {
+        flex-direction: column;
+        max-width: 600px;
+      }
+      .hero-column {
+        width: 100%;
+      }
+    }
+    
+    /* Video Comparison Slider Styles */
+    .comparison-section {
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="hero spvc-hero" id="top">
+    <div class="spvc-spectrum" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="hero-head">
+      <div class="container spvc-nav-wrap">
+        <a class="spvc-nav-brand" href="#top" aria-label="SPVC home">
+          <span class="spvc-nav-mark">SPVC</span>
+        </a>
+        <nav class="spvc-nav" aria-label="Primary navigation">
+          <a href="#hero-teaser">Teaser</a>
+          <a href="#abstract">Abstract</a>
+          <a href="#method-overview">Method</a>
+          <a href="#baseline-comparisons-waymo">NVS Fixing</a>
+          <a href="#assets-insertion-fixing">Panoptic Fixing</a>
+        </nav>
+      </div>
+    </div>
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <p class="spvc-publication-kicker">Supplementary Material</p>
+            <h1 class="title publication-title spvc-publication-title">
+              <span class="spvc-acronym" aria-label="SPVC">
+                <span class="spvc-s">S</span><span class="spvc-p">P</span><span class="spvc-v">V</span><span class="spvc-c">C</span>
+              </span>
+              <span class="spvc-title-copy">Structured and Panoptic Video Fixing for Cross-Dataset Driving Scene Rendering</span>
+            </h1>
+            <div class="spvc-principles" aria-label="SPVC design principles">
+              <span><strong class="spvc-s">S</strong> Structured</span>
+              <span><strong class="spvc-p">P</strong> Panoptic</span>
+              <span><strong class="spvc-v">V</strong> Video</span>
+              <span><strong class="spvc-c">C</strong> Cross-Dataset</span>
+            </div>
+            <div class="spvc-project-links" aria-label="SPVC project links">
+              <a class="spvc-project-link spvc-project-link-paper"
+                 href="https://example.com/spvc-paper"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="Placeholder link: replace with the SPVC paper URL">
+                <span class="icon" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
+                <span>Paper</span>
+              </a>
+              <a class="spvc-project-link spvc-project-link-code"
+                 href="https://example.com/spvc-code"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="Placeholder link: replace with the SPVC code URL">
+                <span class="icon" aria-hidden="true"><i class="fab fa-github"></i></span>
+                <span>Code</span>
+              </a>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <!-- <span class="author-block">
+                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">First Author</a><sup>*</sup>,</span>
+              <span class="author-block">
+                <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Second Author</a><sup>*</sup>,</span>
+              <span class="author-block">
+                <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Third Author</a>
+              </span> -->
+              <!-- <span class="author-block">
+                <a>Anonymous Author(s)</a></span>
+              </span> -->
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teaser Video -->
+  <section class="section comparison-section project-video-section" id="hero-teaser" aria-label="SPVC teaser video">
+    <div class="container">
+      <div class="project-video-heading">
+        <span class="section-index">01</span>
+        <div>
+          <p class="section-eyebrow">Project Teaser</p>
+          <h2 class="title is-2">SPVC in Motion</h2>
+        </div>
+      </div>
+      <div class="teaser-video-wrap">
+        <video class="teaser-video" controls autoplay muted playsinline preload="metadata"
+               poster="static/images/spvc-teaser-poster.jpg">
+          <source src="static/videos/teaser/spvc-promo-v17.mp4" type="video/mp4">
+          Your browser does not support the video element.
+        </video>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- Paper abstract -->
+  <section class="section hero research-section" id="abstract">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+Driving scene reconstruction and rendering, especially with 3D Gaussian Splatting, has become an important component of autonomous driving simulation. However, rendered views often degrade under extrapolated ego trajectories and scene edits, producing blurry structures, temporal flicker, and foreground-background misalignment. Existing refinement methods are commonly designed for a specific setting, such as image-level novel-view repair or object-editing correction. In this paper, we introduce SPVC, a structured and panoptic video fixing framework for cross-dataset driving scene rendering. The name summarizes four design principles. (1) Structured fixing denotes the use of explicit spatial conditions, including camera pose, 3D bounding boxes, and HD maps, to guide the repair process and reduce uncontrolled hallucination. (2) Panoptic fixing refers to correcting both background rendering artifacts, such as distorted roads, buildings, and lanes, and foreground vehicle artifacts introduced by scene editing, such as inconsistent object appearance. (3) Video fixing means that the model operates on driving sequences rather than isolated frames, allowing temporal cues to be used during artifact correction. (4) Cross-dataset fixing means that a single shared network is trained and applied across multiple driving datasets, reducing the need for dataset-specific or scene-specific fixers. Concretely, we construct paired degraded-clean training data by simulating under-constrained 3DGS rendering and foreground vehicle insertion artifacts, and train a two-stage controllable video diffusion model that first addresses video-level appearance and then refines scene layout with structured controls. Experiments on Waymo, nuScenes, and PandaSet show that SPVC improves novel-view artifact correction and foreground vehicle insertion fixing over strong baselines, while maintaining better temporal consistency and spatial controllability.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End paper abstract -->
+
+
+
+<!-- ✅ 新增的 Section：单张图片 -->
+<section class="section hero research-section section-soft" id="method-overview">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+
+        <!-- 标题 -->
+        <h2 class="title is-3">Method Overview</h2>
+        <br>
+
+        <!-- 图片与说明 -->
+        <div class="content has-text-centered">
+          <img src="static/images/overview.png" alt="Method Overview" 
+               style="width:100%; height:auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+          
+          <!-- caption -->
+          <p class="has-text-grey mt-3" style="font-size: 0.9em;">
+            We first construct paired supervision by simulating under-constrained reconstruction across novel-view rendering and 3D asset insertion. The degraded sequence, together with optional boundary frames, is encoded by a frozen video VAE and refined by a controllable video diffusion transformer. SPVC is trained in two stages: boundary-conditioned stabilization followed by progressive boundary-condition dropout, yielding stable and controllable refinement with a foundation-style backbone shared across tasks.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- Baseline Comparisons Section - Waymo -->
+<section class="section hero research-section section-dark nvs-section-start" id="baseline-comparisons-waymo">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h2 class="title is-3">Novel Trajectory Synthesis Fixing</h2>
+        <h3 class="subtitle is-5" style="color: #666; margin-top: -0.5rem;">Waymo Dataset</h3>
+
+        <!-- Scene Selector with Number Circles -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Sample</p>
+        <div class="scene-selector-waymo" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div class="scene-circle-waymo active" data-scene="1"><span>1</span></div>
+          <div class="scene-circle-waymo" data-scene="2"><span>2</span></div>
+          <div class="scene-circle-waymo" data-scene="3"><span>3</span></div>
+          <div class="scene-circle-waymo" data-scene="4"><span>4</span></div>
+          <div class="scene-circle-waymo" data-scene="5"><span>5</span></div>
+          <div class="scene-circle-waymo" data-scene="6"><span>6</span></div>
+          <div class="scene-circle-waymo" data-scene="7"><span>7</span></div>
+          <div class="scene-circle-waymo" data-scene="8"><span>8</span></div>
+          <div class="scene-circle-waymo" data-scene="9"><span>9</span></div>
+          <div class="scene-circle-waymo" data-scene="10"><span>10</span></div>
+        </div>
+
+        <!-- Method Selector Pills -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Baseline</p>
+        <div class="method-selector-waymo" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="method-pill-waymo active" data-method="streetgs">StreetGaussian</button>
+          <button class="method-pill-waymo" data-method="difix">Difix3D+</button>
+          <button class="method-pill-waymo" data-method="streetcrafter">StreetCrafter</button>
+        </div>
+
+        <!-- Side by Side Video Display -->
+        <div class="baseline-video-container" style="display: flex; gap: 16px; max-width: 1100px; margin: 0 auto;">
+          <div class="video-box" style="flex: 1;">
+            <video id="baselineVideoWaymo" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/waymo/1/streetgs.mp4" type="video/mp4">
+            </video>
+            <p id="baselineLabelWaymo" class="has-text-centered mt-2" style="font-weight: 600; color: #4a4a4a;">StreetGaussian</p>
+          </div>
+          <div class="video-box" style="flex: 1;">
+            <video id="oursVideoWaymo" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/waymo/1/ours.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #3273dc;">Ours</p>
+          </div>
+        </div>
+
+        <p class="has-text-grey mt-4" style="font-size: 0.95em;">
+          Comparison of <strong>SPVC</strong> with baseline methods on the Waymo dataset.
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Baseline Comparisons Section - nuScenes -->
+<section class="section hero research-section section-dark" id="baseline-comparisons-nuscenes">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h3 class="subtitle is-5" style="color: #666;">nuScenes Dataset</h3>
+
+        <!-- Scene Selector with Number Circles -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Sample</p>
+        <div class="scene-selector-nuscenes" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div class="scene-circle-nuscenes active" data-scene="1"><span>1</span></div>
+          <div class="scene-circle-nuscenes" data-scene="2"><span>2</span></div>
+          <div class="scene-circle-nuscenes" data-scene="3"><span>3</span></div>
+          <div class="scene-circle-nuscenes" data-scene="4"><span>4</span></div>
+          <div class="scene-circle-nuscenes" data-scene="5"><span>5</span></div>
+          <div class="scene-circle-nuscenes" data-scene="6"><span>6</span></div>
+          <div class="scene-circle-nuscenes" data-scene="7"><span>7</span></div>
+          <div class="scene-circle-nuscenes" data-scene="8"><span>8</span></div>
+          <div class="scene-circle-nuscenes" data-scene="9"><span>9</span></div>
+          <div class="scene-circle-nuscenes" data-scene="10"><span>10</span></div>
+        </div>
+
+        <!-- Method Selector Pills -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Baseline</p>
+        <div class="method-selector-nuscenes" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="method-pill-nuscenes active" data-method="omnire">OmniRe</button>
+          <button class="method-pill-nuscenes" data-method="difix">Difix3D+</button>
+        </div>
+
+        <!-- Side by Side Video Display -->
+        <div class="baseline-video-container" style="display: flex; gap: 16px; max-width: 1100px; margin: 0 auto;">
+          <div class="video-box" style="flex: 1;">
+            <video id="baselineVideoNuscenes" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/nuscenes/1/omnire.mp4" type="video/mp4">
+            </video>
+            <p id="baselineLabelNuscenes" class="has-text-centered mt-2" style="font-weight: 600; color: #4a4a4a;">OmniRe</p>
+          </div>
+          <div class="video-box" style="flex: 1;">
+            <video id="oursVideoNuscenes" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/nuscenes/1/ours.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #3273dc;">Ours</p>
+          </div>
+        </div>
+
+        <p class="has-text-grey mt-4" style="font-size: 0.95em;">
+          Comparison of <strong>SPVC</strong> with baseline methods on the nuScenes dataset.
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Baseline Comparisons Section - PandaSet -->
+<section class="section hero research-section section-dark nvs-section-end" id="baseline-comparisons-pandaset">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h3 class="subtitle is-5" style="color: #666;">PandaSet Dataset</h3>
+
+        <!-- Scene Selector with Number Circles -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Sample</p>
+        <div class="scene-selector-pandaset" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div class="scene-circle-pandaset active" data-scene="1"><span>1</span></div>
+          <div class="scene-circle-pandaset" data-scene="2"><span>2</span></div>
+          <div class="scene-circle-pandaset" data-scene="3"><span>3</span></div>
+          <div class="scene-circle-pandaset" data-scene="4"><span>4</span></div>
+          <div class="scene-circle-pandaset" data-scene="5"><span>5</span></div>
+          <div class="scene-circle-pandaset" data-scene="6"><span>6</span></div>
+          <div class="scene-circle-pandaset" data-scene="7"><span>7</span></div>
+          <div class="scene-circle-pandaset" data-scene="8"><span>8</span></div>
+          <div class="scene-circle-pandaset" data-scene="9"><span>9</span></div>
+          <div class="scene-circle-pandaset" data-scene="10"><span>10</span></div>
+        </div>
+
+        <!-- Side by Side Video Display -->
+        <div class="baseline-video-container" style="display: flex; gap: 16px; max-width: 1100px; margin: 0 auto;">
+          <div class="video-box" style="flex: 1;">
+            <video id="baselineVideoPandaset" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/pandaset/1/omnire.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #4a4a4a;">OmniRe</p>
+          </div>
+          <div class="video-box" style="flex: 1;">
+            <video id="oursVideoPandaset" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/baselines/pandaset/1/ours.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #3273dc;">Ours</p>
+          </div>
+        </div>
+
+        <p class="has-text-grey mt-4" style="font-size: 0.95em;">
+          Comparison of <strong>SPVC</strong> with baseline methods on the PandaSet dataset.
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3D Assets Insertion Fixing Section -->
+<section class="section hero research-section section-soft" id="assets-insertion-fixing">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h2 class="title is-3">3D Assets Insertion Fixing</h2>
+        <br>
+
+        <!-- Scene Selector with Number Circles -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Sample</p>
+        <div class="scene-selector-insertion" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+          <div class="scene-circle-insertion active" data-scene="1"><span>1</span></div>
+          <div class="scene-circle-insertion" data-scene="2"><span>2</span></div>
+          <div class="scene-circle-insertion" data-scene="3"><span>3</span></div>
+          <div class="scene-circle-insertion" data-scene="4"><span>4</span></div>
+          <div class="scene-circle-insertion" data-scene="5"><span>5</span></div>
+        </div>
+
+        <!-- Method Selector Pills -->
+        <p style="font-weight: 600; color: #666; font-size: 0.95em; margin-bottom: 8px;">Baseline</p>
+        <div class="method-selector-insertion" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="method-pill-insertion active" data-method="naive">Naive Insertion</button>
+          <button class="method-pill-insertion" data-method="wan">Wan2.2</button>
+          <button class="method-pill-insertion" data-method="difix">Difix3D+</button>
+        </div>
+
+        <!-- Three Video Display -->
+        <div class="insertion-video-container" style="display: flex; gap: 12px; max-width: 1200px; margin: 0 auto;">
+          <!-- Original View -->
+          <div class="video-box" style="flex: 1;">
+            <video id="originalVideoInsertion" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/insertion/1/original.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #888;">Original</p>
+          </div>
+          <!-- Baseline Method Video -->
+          <div class="video-box" style="flex: 1;">
+            <video id="baselineVideoInsertion" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/insertion/1/naive.mp4" type="video/mp4">
+            </video>
+            <p id="baselineLabelInsertion" class="has-text-centered mt-2" style="font-weight: 600; color: #4a4a4a;">Naive Insertion</p>
+          </div>
+          <!-- Ours Video -->
+          <div class="video-box" style="flex: 1;">
+            <video id="oursVideoInsertion" loop playsinline autoplay muted 
+                   style="width: 100%; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+              <source src="static/videos/insertion/1/ours.mp4" type="video/mp4">
+            </video>
+            <p class="has-text-centered mt-2" style="font-weight: 600; color: #3273dc;">Ours</p>
+          </div>
+        </div>
+
+        <p class="has-text-grey mt-4" style="font-size: 0.95em;">
+          Comparison of <strong>SPVC</strong> with baseline methods for fixing artifacts from 3D asset insertion on the nuScenes dataset.
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<script>
+(function() {
+  // ========== Waymo Section ==========
+  let waymoScene = '1';
+  let waymoMethod = 'streetgs';
+  
+  const waymoMethodNames = {
+    'streetgs': 'StreetGaussian',
+    'difix': 'Difix3D+',
+    'streetcrafter': 'StreetCrafter'
+  };
+  
+  // ========== nuScenes Section ==========
+  let nuscenesScene = '1';
+  let nuscenesMethod = 'omnire';
+  
+  const nuscenesMethodNames = {
+    'omnire': 'OmniRe',
+    'difix': 'Difix3D+'
+  };
+  
+  // ========== PandaSet Section ==========
+  let pandasetScene = '1';
+  
+  // ========== Insertion Section ==========
+  let insertionScene = '1';
+  let insertionMethod = 'naive';
+  
+  const insertionMethodNames = {
+    'naive': 'Naive Insertion',
+    'wan': 'Wan2.2',
+    'difix': 'Difix3D+'
+  };
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // ----- Waymo handlers -----
+    document.querySelectorAll('.scene-circle-waymo').forEach(function(circle) {
+      circle.addEventListener('click', function() {
+        waymoScene = this.getAttribute('data-scene');
+        document.querySelectorAll('.scene-circle-waymo').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        updateWaymoVideos();
+      });
+    });
+    
+    document.querySelectorAll('.method-pill-waymo').forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        waymoMethod = this.getAttribute('data-method');
+        document.querySelectorAll('.method-pill-waymo').forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        updateWaymoVideos();
+      });
+    });
+    
+    // Sync Waymo videos
+    var baselineWaymo = document.getElementById('baselineVideoWaymo');
+    var oursWaymo = document.getElementById('oursVideoWaymo');
+    if (baselineWaymo && oursWaymo) {
+      baselineWaymo.addEventListener('play', function() { oursWaymo.currentTime = baselineWaymo.currentTime; oursWaymo.play(); });
+      baselineWaymo.addEventListener('pause', function() { oursWaymo.pause(); });
+      baselineWaymo.addEventListener('seeked', function() { oursWaymo.currentTime = baselineWaymo.currentTime; });
+    }
+    
+    // ----- nuScenes handlers -----
+    document.querySelectorAll('.scene-circle-nuscenes').forEach(function(circle) {
+      circle.addEventListener('click', function() {
+        nuscenesScene = this.getAttribute('data-scene');
+        document.querySelectorAll('.scene-circle-nuscenes').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        updateNuscenesVideos();
+      });
+    });
+    
+    document.querySelectorAll('.method-pill-nuscenes').forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        nuscenesMethod = this.getAttribute('data-method');
+        document.querySelectorAll('.method-pill-nuscenes').forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        updateNuscenesVideos();
+      });
+    });
+    
+    // Sync nuScenes videos
+    var baselineNuscenes = document.getElementById('baselineVideoNuscenes');
+    var oursNuscenes = document.getElementById('oursVideoNuscenes');
+    if (baselineNuscenes && oursNuscenes) {
+      baselineNuscenes.addEventListener('play', function() { oursNuscenes.currentTime = baselineNuscenes.currentTime; oursNuscenes.play(); });
+      baselineNuscenes.addEventListener('pause', function() { oursNuscenes.pause(); });
+      baselineNuscenes.addEventListener('seeked', function() { oursNuscenes.currentTime = baselineNuscenes.currentTime; });
+    }
+    
+    // ----- PandaSet handlers -----
+    document.querySelectorAll('.scene-circle-pandaset').forEach(function(circle) {
+      circle.addEventListener('click', function() {
+        pandasetScene = this.getAttribute('data-scene');
+        document.querySelectorAll('.scene-circle-pandaset').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        updatePandasetVideos();
+      });
+    });
+    
+    // Sync PandaSet videos
+    var baselinePandaset = document.getElementById('baselineVideoPandaset');
+    var oursPandaset = document.getElementById('oursVideoPandaset');
+    if (baselinePandaset && oursPandaset) {
+      baselinePandaset.addEventListener('play', function() { oursPandaset.currentTime = baselinePandaset.currentTime; oursPandaset.play(); });
+      baselinePandaset.addEventListener('pause', function() { oursPandaset.pause(); });
+      baselinePandaset.addEventListener('seeked', function() { oursPandaset.currentTime = baselinePandaset.currentTime; });
+    }
+    
+    // ----- Insertion handlers -----
+    document.querySelectorAll('.scene-circle-insertion').forEach(function(circle) {
+      circle.addEventListener('click', function() {
+        insertionScene = this.getAttribute('data-scene');
+        document.querySelectorAll('.scene-circle-insertion').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        updateInsertionVideos();
+      });
+    });
+    
+    document.querySelectorAll('.method-pill-insertion').forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        insertionMethod = this.getAttribute('data-method');
+        document.querySelectorAll('.method-pill-insertion').forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        updateInsertionVideos();
+      });
+    });
+    
+    // Sync Insertion videos (all three) - use ended event for sync loop
+    var originalInsertion = document.getElementById('originalVideoInsertion');
+    var baselineInsertion = document.getElementById('baselineVideoInsertion');
+    var oursInsertion = document.getElementById('oursVideoInsertion');
+    if (originalInsertion && baselineInsertion && oursInsertion) {
+      var insertionVideos = [originalInsertion, baselineInsertion, oursInsertion];
+      var restartAllInsertion = function() {
+        insertionVideos.forEach(function(v) { v.currentTime = 0; v.play(); });
+      };
+      insertionVideos.forEach(function(v) {
+        v.removeAttribute('loop');
+        v.addEventListener('ended', restartAllInsertion);
+      });
+      originalInsertion.addEventListener('play', function() {
+        baselineInsertion.currentTime = originalInsertion.currentTime;
+        oursInsertion.currentTime = originalInsertion.currentTime;
+        baselineInsertion.play();
+        oursInsertion.play();
+      });
+      originalInsertion.addEventListener('pause', function() {
+        baselineInsertion.pause();
+        oursInsertion.pause();
+      });
+      originalInsertion.addEventListener('seeked', function() {
+        baselineInsertion.currentTime = originalInsertion.currentTime;
+        oursInsertion.currentTime = originalInsertion.currentTime;
+      });
+    }
+    
+  });
+  
+  function updateWaymoVideos() {
+    var baselineVideo = document.getElementById('baselineVideoWaymo');
+    var oursVideo = document.getElementById('oursVideoWaymo');
+    var label = document.getElementById('baselineLabelWaymo');
+    
+    if (!baselineVideo || !oursVideo) return;
+    
+    var baselineSrc = 'static/videos/baselines/waymo/' + waymoScene + '/' + waymoMethod + '.mp4';
+    var oursSrc = 'static/videos/baselines/waymo/' + waymoScene + '/ours.mp4';
+    
+    baselineVideo.src = baselineSrc;
+    oursVideo.src = oursSrc;
+    if (label) label.textContent = waymoMethodNames[waymoMethod];
+    
+    baselineVideo.load(); oursVideo.load();
+    
+    var readyCount = 0;
+    var videos = [baselineVideo, oursVideo];
+    var playAllSync = function() {
+      readyCount++;
+      if (readyCount === 2) {
+        videos.forEach(function(v) { v.currentTime = 0; v.play(); });
+      }
+    };
+    videos.forEach(function(video) {
+      var handler = function() {
+        video.removeEventListener('canplay', handler);
+        playAllSync();
+      };
+      video.addEventListener('canplay', handler);
+    });
+  }
+  
+  function updateNuscenesVideos() {
+    var baselineVideo = document.getElementById('baselineVideoNuscenes');
+    var oursVideo = document.getElementById('oursVideoNuscenes');
+    var label = document.getElementById('baselineLabelNuscenes');
+    
+    if (!baselineVideo || !oursVideo) return;
+    
+    var baselineSrc = 'static/videos/baselines/nuscenes/' + nuscenesScene + '/' + nuscenesMethod + '.mp4';
+    var oursSrc = 'static/videos/baselines/nuscenes/' + nuscenesScene + '/ours.mp4';
+    
+    baselineVideo.src = baselineSrc;
+    oursVideo.src = oursSrc;
+    if (label) label.textContent = nuscenesMethodNames[nuscenesMethod];
+    
+    baselineVideo.load(); oursVideo.load();
+    
+    var readyCount = 0;
+    var videos = [baselineVideo, oursVideo];
+    var playAllSync = function() {
+      readyCount++;
+      if (readyCount === 2) {
+        videos.forEach(function(v) { v.currentTime = 0; v.play(); });
+      }
+    };
+    videos.forEach(function(video) {
+      var handler = function() {
+        video.removeEventListener('canplay', handler);
+        playAllSync();
+      };
+      video.addEventListener('canplay', handler);
+    });
+  }
+  
+  function updatePandasetVideos() {
+    var baselineVideo = document.getElementById('baselineVideoPandaset');
+    var oursVideo = document.getElementById('oursVideoPandaset');
+    
+    if (!baselineVideo || !oursVideo) return;
+    
+    var baselineSrc = 'static/videos/baselines/pandaset/' + pandasetScene + '/omnire.mp4';
+    var oursSrc = 'static/videos/baselines/pandaset/' + pandasetScene + '/ours.mp4';
+    
+    baselineVideo.src = baselineSrc;
+    oursVideo.src = oursSrc;
+    
+    baselineVideo.load(); oursVideo.load();
+    
+    var readyCount = 0;
+    var videos = [baselineVideo, oursVideo];
+    var playAllSync = function() {
+      readyCount++;
+      if (readyCount === 2) {
+        videos.forEach(function(v) { v.currentTime = 0; v.play(); });
+      }
+    };
+    videos.forEach(function(video) {
+      var handler = function() {
+        video.removeEventListener('canplay', handler);
+        playAllSync();
+      };
+      video.addEventListener('canplay', handler);
+    });
+  }
+  
+  function updateInsertionVideos() {
+    var originalVideo = document.getElementById('originalVideoInsertion');
+    var baselineVideo = document.getElementById('baselineVideoInsertion');
+    var oursVideo = document.getElementById('oursVideoInsertion');
+    var label = document.getElementById('baselineLabelInsertion');
+    
+    if (!originalVideo || !baselineVideo || !oursVideo) return;
+    
+    var originalSrc = 'static/videos/insertion/' + insertionScene + '/original.mp4';
+    var baselineSrc = 'static/videos/insertion/' + insertionScene + '/' + insertionMethod + '.mp4';
+    var oursSrc = 'static/videos/insertion/' + insertionScene + '/ours.mp4';
+    
+    originalVideo.src = originalSrc;
+    baselineVideo.src = baselineSrc;
+    oursVideo.src = oursSrc;
+    if (label) label.textContent = insertionMethodNames[insertionMethod];
+    
+    originalVideo.load(); baselineVideo.load(); oursVideo.load();
+    
+    var readyCount = 0;
+    var videos = [originalVideo, baselineVideo, oursVideo];
+    
+    var restartAll = function() {
+      videos.forEach(function(v) { v.currentTime = 0; v.play(); });
+    };
+    
+    var playAllSync = function() {
+      readyCount++;
+      if (readyCount === 3) {
+        videos.forEach(function(v) { v.currentTime = 0; v.play(); });
+      }
+    };
+    
+    videos.forEach(function(video) {
+      video.removeAttribute('loop');
+      
+      var oldEndedHandler = video._endedHandler;
+      if (oldEndedHandler) {
+        video.removeEventListener('ended', oldEndedHandler);
+      }
+      video._endedHandler = restartAll;
+      video.addEventListener('ended', restartAll);
+      
+      var canplayHandler = function() {
+        video.removeEventListener('canplay', canplayHandler);
+        playAllSync();
+      };
+      video.addEventListener('canplay', canplayHandler);
+    });
+  }
+  
+})();
+</script>
+
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content has-text-centered">
+            <p style="font-weight: 600; color: #363636; margin-bottom: 0.5rem;">
+              SPVC: Structured and Panoptic Video Fixing for Cross-Dataset Driving Scene Rendering
+            </p>
+            <p style="color: #888;">
+              Supplementary Material
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+
+</body>
+
+</html>
