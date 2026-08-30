@@ -517,6 +517,10 @@ video {
   --link-accent: var(--spvc-s);
 }
 
+.spvc-project-link-checkpoints {
+  --link-accent: var(--spvc-c);
+}
+
 .spvc-project-link:hover,
 .spvc-project-link:focus-visible {
   color: #fff;
