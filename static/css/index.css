@@ -521,6 +521,10 @@ video {
   --link-accent: var(--spvc-c);
 }
 
+.spvc-project-link-dataset {
+  --link-accent: var(--spvc-v);
+}
+
 .spvc-project-link:hover,
 .spvc-project-link:focus-visible {
   color: #fff;
