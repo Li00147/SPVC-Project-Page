@@ -448,6 +448,60 @@ video {
   animation: spvc-rise 600ms 140ms ease both;
 }
 
+.spvc-author-meta {
+  max-width: 1180px;
+  margin: 1.75rem auto 0;
+  font-family: var(--spvc-font);
+  animation: spvc-rise 600ms 190ms ease both;
+}
+
+.spvc-author-list {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.9;
+}
+
+.spvc-author-name {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.spvc-author-meta sup {
+  position: relative;
+  top: -0.25em;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.68em;
+  font-weight: 700;
+}
+
+.spvc-affiliations {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1.15rem;
+  max-width: 1160px;
+  margin: 0.8rem auto 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.83rem;
+  line-height: 1.6;
+}
+
+.spvc-affiliations span {
+  display: inline-block;
+}
+
+.spvc-author-notes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1.25rem;
+  margin-top: 0.75rem;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
 .spvc-s { color: var(--spvc-s); }
 .spvc-p { color: var(--spvc-p); }
 .spvc-v { color: var(--spvc-v); }
@@ -943,6 +997,28 @@ video {
     font-size: 0.78rem;
   }
 
+  .spvc-author-meta {
+    margin-top: 1.4rem;
+  }
+
+  .spvc-author-list {
+    font-size: 0.98rem;
+    line-height: 1.8;
+  }
+
+  .spvc-affiliations {
+    gap: 0.35rem 0.8rem;
+    font-size: 0.74rem;
+    line-height: 1.5;
+  }
+
+  .spvc-author-notes {
+    align-items: center;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.72rem;
+  }
+
   .spvc-project-links {
     gap: 0.6rem;
     margin-top: 1.5rem;
@@ -996,6 +1072,7 @@ video {
   html { scroll-behavior: auto; }
   .spvc-acronym span,
   .spvc-title-copy,
+  .spvc-author-meta,
   .spvc-principles,
   .spvc-project-links {
     animation: none;
